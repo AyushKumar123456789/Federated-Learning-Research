@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock Predictions</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    />
+  </head>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+      <h1 class="text-4xl font-bold text-center mb-8">
+        Global Stock Market Predictions
+      </h1>
+
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold mb-4">Predictions</h2>
+        <ul class="list-disc pl-8">
+          {% for prediction in predictions %}
+          <li class="mb-2">Day {{ loop.index }}: {{ prediction }}</li>
+          {% endfor %}
+        </ul>
+
+        <h2 class="text-2xl font-semibold mb-4 mt-6">
+          Prediction vs Actual Data
+        </h2>
+        <img
+          src="data:image/png;base64,{{ plot_url }}"
+          alt="Predictions vs Real Data"
+          class="w-full h-auto"
+        />
+
+        <h2 class="text-2xl font-semibold mb-4 mt-6">
+          Mean Absolute Error: {{ mae }}
+        </h2>
+
+        <h2 class="text-2xl font-semibold mb-4 mt-6">Tabulated Results</h2>
+        <table class="min-w-full bg-white">
+          <thead>
+            <tr>
+              <th class="py-2 px-4 border-b">Date</th>
+              <th class="py-2 px-4 border-b">Actual</th>
+              <th class="py-2 px-4 border-b">Predicted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in results %}
+            <tr>
+              <td class="py-2 px-4 border-b">{{ row['Date'] }}</td>
+              <td class="py-2 px-4 border-b">{{ row['Actual'] }}</td>
+              <td class="py-2 px-4 border-b">{{ row['Predicted'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <a
+          href="/"
+          class="mt-4 inline-block bg-blue-500 text-white py-2 px-4 rounded"
+          >Go Back</a
+        >
+      </div>
+    </div>
+  </body>
+</html>

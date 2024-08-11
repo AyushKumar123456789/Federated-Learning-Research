@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Federated Stock Prediction</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h1>Federated Learning Stock Prediction</h1>
+    <a href="{{ url_for('upload') }}">Upload Data</a>
+    <a href="{{ url_for('predict') }}">Predict</a>
+  </body>
+</html>
