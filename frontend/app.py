@@ -6,28 +6,23 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-
     return render_template('index.html')
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    print("Route of app.py /upload: ", request.method)
     if request.method == 'POST':
         file = request.files['file']
-        print("File: ", file.filename)
-
-    # Ensure the data directory exists
-    if not os.path.exists('data'):
-        os.makedirs('data')
-        file.save(f"data/{file.filename}")
+        if not os.path.exists('data'):
+            os.makedirs('data')
+        file.save(os.path.join('data', file.filename))
         return redirect(url_for('index'))
     return render_template('upload.html')
 
 @app.route('/predict', methods=['GET'])
 def predict():
-    response = requests.get('http://172.22.51.252:5000/global_predict', timeout=10)
-    print("Route of app.py /predict: ")
-    
+    response = requests.get('http://172.22.51.252:5000/global_predict', timeout=100)
+    print("Debugging response.json()-------\n")
+    print(response.json())
     predictions = response.json()['predictions']
     results = response.json()['results']
     mae = response.json()['mae']

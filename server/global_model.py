@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from sklearn.metrics import mean_absolute_error
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend for Matplotlib
@@ -15,12 +16,60 @@ class GlobalModel:
     def aggregate_models(self, local_models):
         # Average the parameters of local models
         self.model_params = np.mean(local_models, axis=0)
-        # p, d, q = self.model_params
         self.model_params = np.abs(self.model_params)
         print("Aggregated model parameters:", self.model_params)
 
+    def _find_best_model(self, train):
+        best_aic = np.inf
+        best_order = None
+        best_model = None
 
-    def predict(self, file_path, steps=30, test_size=0.2):
+        # Define range for p, d, q
+        p = d = q = range(0, 3)
+
+        # Iterate over all combinations of p, d, q
+        for i in p:
+            for j in d:
+                for k in q:
+                    try:
+                        # Fit ARIMA model
+                        temp_model = ARIMA(endog=train, order=(i, j, k))
+                        temp_model_fit = temp_model.fit()
+                        if temp_model_fit.aic < best_aic:
+                            best_aic = temp_model_fit.aic
+                            best_order = (i, j, k)
+                            best_model = temp_model_fit
+                    except Exception as e:
+                        continue
+        print(f"Best ARIMA model order: {best_order} with AIC: {best_aic}")
+        return best_model
+
+    def _find_best_sarimax_model(self, train):
+        best_aic = np.inf
+        best_order = None
+        best_model = None
+
+        # Define range for p, d, q
+        p = d = q = range(0, 3)
+
+        # Iterate over all combinations of p, d, q
+        for i in p:
+            for j in d:
+                for k in q:
+                    try:
+                        # Fit SARIMAX model
+                        temp_model = SARIMAX(endog=train, order=(i, j, k), seasonal_order=(i, j, k, 12))
+                        temp_model_fit = temp_model.fit(disp=False)
+                        if temp_model_fit.aic < best_aic:
+                            best_aic = temp_model_fit.aic
+                            best_order = (i, j, k)
+                            best_model = temp_model_fit
+                    except Exception as e:
+                        continue
+        print(f"Best SARIMAX model order: {best_order} with AIC: {best_aic}")
+        return best_model
+
+    def predict(self, file_path, model_type='ARIMA', steps=30, test_size=0.05):
         try:
             # Read and preprocess the data
             data = pd.read_csv(file_path)
@@ -40,23 +89,13 @@ class GlobalModel:
             print("Training size:", len(train))
             print("Testing size:", len(test))
             
-            # Define ARIMA model
-            model = ARIMA(endog=train, order=(5, 1, 0))
-            
-            try:
-                # Attempt to fit the model without specifying start_params
-                # model_fit = model.fit()  # Remove start_params for initial testing
-                model_fit = model.fit(start_params=self.model_params)
-                print("Model fitting successful", model_fit.params)
-            except ValueError as e:
-                print(f"ValueError during ARIMA model fitting: {e}")
-                return None, None, None, None
-            except np.linalg.LinAlgError as e:
-                print(f"LinAlgError during ARIMA model fitting: {e}")
-                return None, None, None, None
-            except Exception as e:
-                print(f"Error during ARIMA model fitting: {e}")
-                return None, None, None, None
+            # Select and fit the best model based on model_type
+            if model_type == 'ARIMA':
+                model_fit = self._find_best_model(train)
+            elif model_type == 'SARIMAX':
+                model_fit = self._find_best_sarimax_model(train)
+            else:
+                raise ValueError(f"Unsupported model type: {model_type}")
             
             # Forecast the test period
             predictions = model_fit.forecast(steps=len(test))
@@ -74,16 +113,13 @@ class GlobalModel:
                 'Actual': test.values,
                 'Predicted': predictions
             })
-            results.index = results.index.strftime('%Y-%m-%d')  # Convert index to string for JSON serialization
-            # print("Results DataFrame head:", results.head())
-            # print("Results DataFrame info:", results.info())
-            # print(results)
+            results.index = test.index.strftime('%Y-%m-%d')
             
             # Plot the actual vs predicted values
             plt.figure(figsize=(10, 5))
             plt.plot(test.index, test, label='Actual')
             plt.plot(test.index, predictions, label='Predicted', linestyle='--')
-            plt.title('ARIMA Model: Actual vs Predicted')
+            plt.title(f'{model_type} Model: Actual vs Predicted')
             plt.xlabel('Date')
             plt.ylabel('Close Price')
             plt.legend()
@@ -100,5 +136,3 @@ class GlobalModel:
         except Exception as e:
             print(f"Error during prediction: {e}")
             return None, None, None, None
-
-
