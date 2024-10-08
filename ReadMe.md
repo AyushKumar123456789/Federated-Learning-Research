@@ -1,4 +1,3 @@
-Sure, let's break down the code files one by one to understand what each of them is doing in the federated learning project for stock prediction using the ARIMA model.
 
 ### 1. **`global_model.py`**
 
